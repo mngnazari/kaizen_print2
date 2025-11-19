@@ -415,8 +415,12 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
                 await query.message.reply_text("❌ سفارش یافت نشد.")
                 return
 
-            # چک کردن deadline ویرایش
-            if db_order.edit_deadline:
+            temp_count_key = f'temp_print_count_{message.message_id}'
+
+            # بررسی deadline فقط برای عملیات حذف سفارش (cancel_order)
+            # تغییر تعداد سفارش (edit_count, increase_count, decrease_count) همیشه مجاز است
+            is_deadline_passed = False
+            if db_order.edit_deadline and data == "cancel_order":
                 try:
                     from datetime import timezone, timedelta
                     IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
@@ -439,14 +443,16 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
                     if now_iran > deadline_iran:
                         minutes_passed = int((now_iran - deadline_iran).total_seconds() / 60)
                         logger.info(f"🔒 زمان ویرایش سپری شده - {minutes_passed} دقیقه پیش")
+                        is_deadline_passed = True
 
                         await query.answer("⏰ زمان ویرایش سفارش به پایان رسیده است!", show_alert=True)
                         await query.edit_message_reply_markup(reply_markup=None)
                         await query.message.reply_text(
                             f"⏰ **زمان ویرایش به پایان رسید**\n\n"
-                            f"متأسفانه فایل شما وارد مرحله پردازش شده و دیگه امکان تغییر نیست\n\n"
+                            f"متأسفانه فایل شما وارد مرحله پردازش شده و دیگه امکان حذف نیست\n\n"
                             f"📊 مدت زمان سپری شده: {minutes_passed} دقیقه\n\n"
-                            f"💡 **نگران نباش!** اگه نیاز به تغییری داری، با پشتیبانی تماس بگیر"
+                            f"💡 **اما می‌تونی تعداد سفارشت رو تغییر بدی!**\n"
+                            f"📞 برای حذف کامل، با پشتیبانی تماس بگیر"
                         )
                         return
                     else:
@@ -456,10 +462,6 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
                     logger.error(f"❌ خطا در چک deadline: {e}")
                     import traceback
                     logger.error(traceback.format_exc())
-            else:
-                logger.warning(f"⚠️ سفارش {order_id} edit_deadline ندارد!")
-
-            temp_count_key = f'temp_print_count_{message.message_id}'
 
             if data == "edit_count":
                 context.user_data[temp_count_key] = db_order.print_count
