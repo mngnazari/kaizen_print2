@@ -321,18 +321,22 @@ def main() -> None:
     """تابع اصلی ربات."""
     logger.info("🚀 شروع راه‌اندازی ربات...")
 
-    # حذف دیتابیس قبلی
-    db_path = pathlib.Path('print3d_orders.db')
-    if db_path.exists():
-        try:
-            os.remove(db_path)
-            logger.info("✅ دیتابیس با موفقیت پاک شد")
-        except Exception as e:
-            logger.error(f"❌ خطا در حذف دیتابیس: {e}")
+    # ⚠️ فقط برای Development/Testing - دیتابیس را پاک و دوباره می‌سازد
+    # در Production این خطوط را کامنت کنید!
+    # db_path = pathlib.Path('print3d_orders.db')
+    # if db_path.exists():
+    #     try:
+    #         os.remove(db_path)
+    #         logger.info("✅ دیتابیس با موفقیت پاک شد")
+    #     except Exception as e:
+    #         logger.error(f"❌ خطا در حذف دیتابیس: {e}")
 
-    # ایجاد دیتابیس
+    # ایجاد دیتابیس (اگر وجود نداشته باشد)
     database.connection.Base.metadata.create_all(database.connection.engine)
-    logger.info("🗄️ دیتابیس ایجاد شد")
+    logger.info("🗄️ دیتابیس بررسی/ایجاد شد")
+
+    # مقداردهی تنظیمات پیش‌فرض
+    initialize_default_settings()
 
     # اطمینان از وجود صندوق تنخواه گردان
     with database.connection.SessionLocal() as db:
